@@ -1,2 +1,3 @@
-# alura_certificate_manager
-Script to download, store and upload alura's certificates.
+# Alura Certificate Manager.
+
+Inspired and forked from https://github.com/juliogazoli/certificados-alura
