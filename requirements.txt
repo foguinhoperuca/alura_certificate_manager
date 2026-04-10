@@ -17,3 +17,5 @@ flake8
 importchecker
 autopep8
 pillow
+
+pydantic

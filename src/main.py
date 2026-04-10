@@ -8,7 +8,6 @@ from alura import run
 from util import Util
 
 
-
 if __name__ == "__main__":
     bot_logger = logging.getLogger('ALURA_CERTIFICATE_MANAGER')
     bot_logger.setLevel(logging.INFO)
@@ -29,10 +28,10 @@ if __name__ == "__main__":
     #     logger.info(f"{logging.getLevelName(logger.getEffectiveLevel())=}")
 
     if args.action.lower() == "alura":
-        print('download from alura')
+        bot_logger.info('download from alura')
         asyncio.run(run())
     elif args.action.lower() == "gcef":
-        print('upload to gcef')
+        bot_logger.info('[TODO] upload to gcef')
     else:
         sys.exit(f"Failed execution. Client bot don't recognized! {args.gecon=}")
 
