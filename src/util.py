@@ -1,4 +1,18 @@
+from dotenv import dotenv_values, find_dotenv
 from termcolor import colored    # type: ignore
+
+DEFAULT_ENV_PATH: str = '../.env'
+SECRETS = dotenv_values(find_dotenv(DEFAULT_ENV_PATH))
+HEADLESS: bool = SECRETS['HEADLESS'].lower() in ("true", "1", "yes", "on", "t") if SECRETS['HEADLESS'] is not None else False
+
+DOWNLOAD_DIR: str = 'jecampos'
+ALURA_BASE_URL: str = 'https://cursos.alura.com.br'
+ALURA_CONCURRENCY: int = 20
+
+GCEF_BASE_URL: str = 'https://gcef.sorocaba.sp.gov.br'
+GCEF_CONCURRENCY: int = 5
+GCEF_FILE_SRC: str = 'certificates/gcef.csv'
+BASE_GCEF_CERTIFICATE_DIR: str = '/home/jefferson/universal/projects/alura/certificates/alura_certificate_manager/certificates/'
 
 
 class Util:

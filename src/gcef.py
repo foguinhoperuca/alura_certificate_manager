@@ -1,12 +1,23 @@
+import asyncio
+import csv
+from datetime import datetime
 from enum import StrEnum, auto
 import logging
+import os
 import re
-from typing import List, Optional, Self
+from typing import Dict, List, Optional, Self
 
+from dotenv import dotenv_values, find_dotenv
+from playwright.async_api import async_playwright
 from pydantic import BaseModel, field_validator
+from termcolor import colored    # type: ignore
+from tqdm import tqdm
 
+from util import GCEF_BASE_URL, GCEF_CONCURRENCY, HEADLESS, SECRETS, GCEF_FILE_SRC, BASE_GCEF_CERTIFICATE_DIR
 from value_object.workload import Workload
 
+
+INSTITUTION_DEFAULT_NAME: str = 'AOVS Sistemas de Informática S.A'
 
 class Classification(StrEnum):
     FREE_COURSE = 'Curso Livre'
@@ -56,6 +67,62 @@ class CertificateInfo(BaseModel):
         self.end_date = match.group(4)
 
 
+async def upload() -> None:
+    username = SECRETS['GCEF_USERNAME']
+    password = SECRETS['GCEF_PASSWORD']
+    logger = logging.getLogger('ALURA_CERTIFICATE_MANAGER')
+    logger.info(f'{HEADLESS=}')
 
-# ------------------------------------------------
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=HEADLESS)
+        context = await browser.new_context()
+        page = await context.new_page()
 
+        await page.goto(GCEF_BASE_URL)
+        await page.get_by_role("main").get_by_role("link", name=" Entrar").click()
+        await page.get_by_role("button", name=" Continuar").click()
+        await page.get_by_role("textbox", name="Nome de usuário").fill(username)
+        await page.get_by_role("textbox", name="Senha").fill(password)
+        await page.get_by_role("button", name="Entrar").click()
+        await page.get_by_role("link", name=" Enviar Certificados").first.click()
+
+        with open(GCEF_FILE_SRC, mode="r", encoding="utf-8") as certificates_info:
+            reader = csv.DictReader(certificates_info, delimiter=';')
+            certificates = list(reader)
+            total = len(certificates)
+            logger.info(colored(f'Total certificates: {total}', 'red', attrs=['bold', 'dark']))
+            for index, row in enumerate(certificates):
+                logger.info(f"Reading line id: {row['id']} at index {index}")
+                # breakpoint()
+
+                await page.locator(f"#id_form-{index}-certificacao").fill(row['name'])
+                await page.locator(f"#id_form-{index}-instituicao").fill(INSTITUTION_DEFAULT_NAME)
+                await page.locator(f"#id_form-{index}-carga_horaria_0").fill(row['workload'])
+
+                start_date = datetime.strptime(row['start_date'], "%d/%m/%Y").strftime("%Y-%m-%d")
+                end_date = datetime.strptime(row['end_date'], "%d/%m/%Y").strftime("%Y-%m-%d")
+                await page.locator(f"#id_form-{index}-data_inicio").fill(start_date)
+                await page.locator(f"#id_form-{index}-data_fim").fill(end_date)
+                await page.locator(f"#id_form-{index}-data_emissao").fill("2026-04-12")
+
+                await page.locator(f"#id_form-{index}-classificacao").select_option("35")
+                await page.locator(f"#id_form-{index}-tipo").select_option("4")
+                await page.locator(f"#id_form-{index}-carga_horaria_1").fill("00")
+
+                await page.locator(f"#id_form-{index}-certificado").set_input_files(BASE_GCEF_CERTIFICATE_DIR + row['path'])
+
+                if index != (total - 1):
+                    await page.get_by_role("button", name=" Adicionar Certificado").click()
+                print('-----------------------------------')
+                # breakpoint()
+
+        logger.info(f'Finished loading data from {GCEF_FILE_SRC}')
+        breakpoint()
+
+        await page.close()
+        await context.close()
+        await browser.close()
+
+
+if __name__ == "__main__":
+    asyncio.run(upload())

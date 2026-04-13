@@ -4,20 +4,11 @@ import os
 import re
 from typing import Dict, List, Optional
 
-from dotenv import dotenv_values, find_dotenv
 from playwright.async_api import async_playwright
 from tqdm import tqdm
 
 from gcef import CertificateInfo
-
-
-HEADLESS: bool = True
-DEFAULT_ENV_PATH: str = '../.env'
-SECRETS = dotenv_values(find_dotenv(DEFAULT_ENV_PATH))
-
-DOWNLOAD_DIR = "jecampos"
-BASE_URL = "https://cursos.alura.com.br"
-CONCURRENCY = 20
+from util import ALURA_BASE_URL, ALURA_CONCURRENCY, DOWNLOAD_DIR, HEADLESS, SECRETS
 
 
 def extract_name(url) -> str:
@@ -75,7 +66,7 @@ async def run() -> None:
         context = await browser.new_context()
         page = await context.new_page()
 
-        await page.goto(BASE_URL + "/loginForm")
+        await page.goto(ALURA_BASE_URL + "/loginForm")
         await page.fill('input[name="username"]', email)
         await page.fill('input[name="password"]', passwd)
         await page.click('button:has-text("Entrar")')
@@ -93,7 +84,7 @@ async def run() -> None:
         for i in range(total):
             href = await links.nth(i).get_attribute("href")
             if href:
-                url = BASE_URL + href
+                url = ALURA_BASE_URL + href
                 url_formal = url.replace("certificate", "formalCertificate")
                 certificates_urls.append(url_formal)
 
@@ -101,7 +92,7 @@ async def run() -> None:
 
         print(f"Total: {len(certificates_urls)}")
 
-        sem = asyncio.Semaphore(CONCURRENCY)
+        sem = asyncio.Semaphore(ALURA_CONCURRENCY)
 
         raw_texts: Dict[int, str] = {}
 

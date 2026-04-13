@@ -4,6 +4,7 @@ import logging
 import sys
 
 from alura import run
+from gcef import upload
 # sys.path.append('.')
 from util import Util
 
@@ -28,10 +29,11 @@ if __name__ == "__main__":
     #     logger.info(f"{logging.getLevelName(logger.getEffectiveLevel())=}")
 
     if args.action.lower() == "alura":
-        bot_logger.info('download from alura')
+        bot_logger.info('[ALURA] download from alura')
         asyncio.run(run())
     elif args.action.lower() == "gcef":
-        bot_logger.info('[TODO] upload to gcef')
+        bot_logger.info('[GCEF] upload to gcef')
+        asyncio.run(upload())
     else:
         sys.exit(f"Failed execution. Client bot don't recognized! {args.gecon=}")
 
